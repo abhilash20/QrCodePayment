@@ -1,12 +1,31 @@
 <!DOCTYPE html>
-<html >
+<html>
 <head>
     <title>Scan to Pay</title>
+    <script>
+        const orderId = "abcd312"; // You must inject the actual orderId dynamically
+        async function checkPaymentStatus() {
+            const res = await fetch(`payment/status/${orderId}`);
+            if (!res.ok) {
+                document.getElementById("status").innerText = "Error checking payment status";
+                return;
+            }
+            const data = await res.json();  // Parse JSON
+            if (data.paid) {
+                document.getElementById("status").innerHTML = "<p style='color:green;'>✅ Payment Successful!</p>";
+                clearInterval(pollInterval);
+            } else {
+                document.getElementById("status").innerText = " Waiting for payment...";
+            }
+        }
 
+        const pollInterval = setInterval(checkPaymentStatus, 3000); // every 3 sec
+        window.onload = checkPaymentStatus;
+    </script>
 </head>
 <body>
 <h2>Scan this QR code to Pay</h2>
 <img src="qr.png" alt="Scan to Pay QR Code" width="250"/>
-<div id="status"></div>
+<div id="status">Loading...</div>
 </body>
 </html>

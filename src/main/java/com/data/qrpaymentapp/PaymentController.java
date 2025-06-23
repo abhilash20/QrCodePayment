@@ -4,6 +4,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
+import java.util.Map;
+
 @RestController
 public class    PaymentController {
 
@@ -18,6 +21,10 @@ public class    PaymentController {
 //                .contentType(MediaType.TEXT_HTML)
 //                .body(html);
 //    }
+    private final PaymentStatusStore paymentStatusStore;
+    public PaymentController(PaymentStatusStore paymentStatusStore) {
+        this.paymentStatusStore = paymentStatusStore;
+    }
 
     @GetMapping("/pay")
     public ResponseEntity<String> forwardToAuthorizeNet(@RequestParam String token) {
@@ -71,4 +78,11 @@ public class    PaymentController {
         String html = "<html><body><h2>Payment Cancelled</h2><p>Order ID: " + orderId + "</p></body></html>";
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
     }
+
+    @GetMapping("/payment/status/{orderId}")
+    public Map<String, Boolean> checkStatus(@PathVariable String orderId) {
+        boolean paid = paymentStatusStore.isPaid(orderId);
+        return Collections.singletonMap("paid", paid);
+    }
+
 }

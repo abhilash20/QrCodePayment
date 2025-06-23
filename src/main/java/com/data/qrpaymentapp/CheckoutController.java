@@ -13,8 +13,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.net.URLEncoder;
@@ -23,11 +24,23 @@ import java.nio.charset.StandardCharsets;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 
-@RestController
+@Controller
 public class CheckoutController {
 
     @Value("${authorizenet.loginid}") private String loginId;
     @Value("${authorizenet.transactionkey}") private String txnKey;
+
+    // Show the order ID entry page
+    @GetMapping("/checkout")
+    public String orderEntryPage() {
+        return "redirect:/order-entry.html"; // This maps to order-entry.html
+    }
+
+    // Handle the form submission and redirect to /checkout/{orderId}
+    @GetMapping("/checkout-go")
+    public String redirectWithOrderId(@RequestParam String orderId) {
+        return "redirect:/checkout/" + orderId;
+    }
 
     @GetMapping("/checkout/{orderId}")
     public ResponseEntity<Void> checkout(@PathVariable String orderId) throws Exception {
@@ -40,6 +53,11 @@ public class CheckoutController {
         TransactionRequestType txn = new TransactionRequestType();
         txn.setTransactionType(TransactionTypeEnum.AUTH_CAPTURE_TRANSACTION.value());
         txn.setAmount(new BigDecimal("5.00"));
+        OrderType order = new OrderType();
+        order.setInvoiceNumber("abcd312"); // orderId must match the one used on the QR page
+        txn.setOrder(order);
+        System.out.println("Order ID set in transaction: " + txn.getOrder().getInvoiceNumber());
+
         GetHostedPaymentPageRequest req = new GetHostedPaymentPageRequest();
         req.setMerchantAuthentication(auth);
         req.setTransactionRequest(txn);
@@ -51,7 +69,7 @@ public class CheckoutController {
         SettingType s = new SettingType();
         s.setSettingName("hostedPaymentReturnOptions");
 //        s.setSettingValue("{\"showReceipt\":false,\"url\":\"http://localhost:8080/pay\",\"cancelUrl\":\"http://localhost:8080/pay\"}");
-        String returnOptions = "{\"showReceipt\":false,\"url\":\"https://26a8-75-181-241-45.ngrok-free.app/pay\",\"cancelUrl\":\"https://26a8-75-181-241-45.ngrok-free.app/pay\"}";
+        String returnOptions = "{\"showReceipt\":false,\"url\":\"https://6c37-75-181-241-45.ngrok-free.app/pay\",\"cancelUrl\":\"https://6c37-75-181-241-45.ngrok-free.app/pay\"}";
         s.setSettingValue(returnOptions);
 
         req.getHostedPaymentSettings().getSetting().add(s);
@@ -86,7 +104,7 @@ public class CheckoutController {
         String token = resp.getToken();
         String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8.toString());
 //        String payUrl = "https://test.authorize.net/payment/payment?token=" + token;
-        String payUrl = "https://26a8-75-181-241-45.ngrok-free.app/pay?token=" + encodedToken;
+        String payUrl = "https://6c37-75-181-241-45.ngrok-free.app/pay?token=" + encodedToken;
         System.out.println("Pay URL: " + payUrl);
 //        ByteArrayOutputStream baos = new ByteArrayOutputStream();
 //        BitMatrix matrix = new MultiFormatWriter().encode(payUrl, BarcodeFormat.QR_CODE, 300, 300);
